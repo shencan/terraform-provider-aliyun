@@ -1,7 +1,8 @@
 terraform {
   required_providers {
     aliyun = {
-      source = "github.com/shencan/aliyun"
+      source = "shencan/aliyun"
+      version = "0.0.2"
     }
   }
 }
