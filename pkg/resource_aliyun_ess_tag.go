@@ -156,6 +156,7 @@ func (esstag *EssTagResource) Read(ctx context.Context, req resource.ReadRequest
 }
 
 func (esstag *EssTagResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	// plan
 	var plan models.EssTagModels
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -163,8 +164,16 @@ func (esstag *EssTagResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
+	//state
+	var state models.EssTagModels
+	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	essId := plan.EssId.ValueString()
-	input := &ess20220222.TagResourcesRequest{
+	tagInput := &ess20220222.TagResourcesRequest{
 		RegionId: tea.String(esstag.Region),
 		ResourceIds: []*string{
 			&essId,
@@ -173,21 +182,38 @@ func (esstag *EssTagResource) Update(ctx context.Context, req resource.UpdateReq
 	}
 
 	for k, v := range plan.Tags.Elements() {
-		input.Tags = append(input.Tags, &ess20220222.TagResourcesRequestTags{
+		tagInput.Tags = append(tagInput.Tags, &ess20220222.TagResourcesRequestTags{
 			Value: tea.String(v.String()),
 			Key:   tea.String(k),
 		})
 	}
 
+	unTagKeys := esstag.CheckTags(state, plan)
 	tflog.Info(ctx, "Update Configured---->", map[string]any{
 		"region": esstag.Region,
 		"essId":  plan.EssId.ValueString(),
-		"tags":   input.Tags,
+		"tags":   tagInput.Tags,
+		"untag":  unTagKeys,
 	})
 
-	_, err := esstag.Client.TagResources(input)
+	// tag again
+	_, err := esstag.Client.TagResources(tagInput)
 	if err != nil {
 		resp.Diagnostics.AddError("could not create ess tag[update]", err.Error())
+		return
+	}
+	// untag
+	unTagInput := &ess20220222.UntagResourcesRequest{
+		RegionId: tea.String(esstag.Region),
+		ResourceIds: []*string{
+			&essId,
+		},
+		ResourceType: tea.String("scalinggroup"),
+		TagKeys:      unTagKeys,
+	}
+	_, err = esstag.Client.UntagResources(unTagInput)
+	if err != nil {
+		resp.Diagnostics.AddError("could not delete ess tag[update]", err.Error())
 		return
 	}
 
@@ -249,4 +275,26 @@ func (esstag *EssTagResource) Configure(ctx context.Context, req resource.Config
 	}
 	esstag.Client = client
 	esstag.Region = providerClient.GetRegion()
+}
+
+// 比较state和plan tag信息返回要删除的tagKeys
+func (esstag *EssTagResource) CheckTags(state, plan models.EssTagModels) []*string {
+	stateTag := make(map[string]string)
+	planTag := make(map[string]string)
+
+	for k, v := range state.Tags.Elements() {
+		stateTag[k] = v.String()
+	}
+
+	for k, v := range plan.Tags.Elements() {
+		planTag[k] = v.String()
+	}
+	var unTagKey []*string
+	for k := range stateTag {
+		if _, ok := planTag[k]; !ok {
+			tmpKey := k
+			unTagKey = append(unTagKey, &tmpKey)
+		}
+	}
+	return unTagKey
 }
