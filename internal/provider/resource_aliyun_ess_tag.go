@@ -6,11 +6,11 @@ import (
 	ess20220222 "github.com/alibabacloud-go/ess-20220222/v2/client"
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/shencan/terraform-provider-aliyun/internal/provider/models"
-
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
@@ -73,10 +73,13 @@ func (esstag *EssTagResource) Create(ctx context.Context, req resource.CreateReq
 		ResourceType: tea.String("scalinggroup"),
 	}
 
-	for k, v := range plan.Tags.Elements() {
+	var planTag = make(map[string]string)
+	plan.Tags.ElementsAs(ctx, &planTag, true)
+
+	for k, v := range planTag {
 		input.Tags = append(input.Tags, &ess20220222.TagResourcesRequestTags{
-			Value: tea.String(v.String()),
 			Key:   tea.String(k),
+			Value: tea.String(v),
 		})
 	}
 
@@ -125,22 +128,17 @@ func (esstag *EssTagResource) Read(ctx context.Context, req resource.ReadRequest
 	if response.Body == nil {
 		resp.Diagnostics.AddError("error reading ess DescribeScalingGroups", "response.Body is nil")
 	}
-	asgTag := make(map[string]string)
+
+	asgTag := make(map[string]attr.Value)
 	for _, asg := range response.Body.ScalingGroups {
 		for _, tag := range asg.Tags {
-			asgTag[tea.StringValue(tag.TagKey)] = tea.StringValue(tag.TagValue)
+			if strings.Contains(tea.StringValue(tag.TagKey), "ack.") || strings.Contains(tea.StringValue(tag.TagKey), "acs:") {
+				continue
+			}
+			asgTag[tea.StringValue(tag.TagKey)] = types.StringValue(tea.StringValue(tag.TagValue))
 		}
 	}
-
-	stateTag := make(map[string]attr.Value)
-	for k, v := range state.Tags.Elements() {
-		if val, ok := asgTag[k]; ok {
-			stateTag[k] = types.StringValue(val)
-		}
-		stateTag[k] = v
-	}
-
-	value, _ := types.MapValue(types.StringType, stateTag)
+	value, _ := types.MapValue(types.StringType, asgTag)
 	state.Tags = value
 
 	// Set refreshed state
@@ -182,10 +180,12 @@ func (esstag *EssTagResource) Update(ctx context.Context, req resource.UpdateReq
 		ResourceType: tea.String("scalinggroup"),
 	}
 
-	for k, v := range plan.Tags.Elements() {
+	var planTag = make(map[string]string)
+	plan.Tags.ElementsAs(ctx, &planTag, true)
+	for k, v := range planTag {
 		tagInput.Tags = append(tagInput.Tags, &ess20220222.TagResourcesRequestTags{
-			Value: tea.String(v.String()),
 			Key:   tea.String(k),
+			Value: tea.String(v),
 		})
 	}
 
