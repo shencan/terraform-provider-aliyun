@@ -1,11 +1,11 @@
-package pkg
+package provider
 
 import (
 	"context"
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
 	ess20220222 "github.com/alibabacloud-go/ess-20220222/v2/client"
 	"github.com/alibabacloud-go/tea/tea"
-	"github.com/shencan/terraform-provider-aliyun/pkg/models"
+	"github.com/shencan/terraform-provider-aliyun/internal/provider/models"
 )
 
 type ProviderClient struct {

@@ -1,4 +1,4 @@
-package pkg
+package provider
 
 import (
 	"context"
@@ -8,8 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
-	"github.com/shencan/terraform-provider-aliyun/pkg/models"
+	"github.com/shencan/terraform-provider-aliyun/internal/provider/models"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
@@ -34,12 +33,14 @@ func (esstag *EssTagResource) Metadata(ctx context.Context, req resource.Metadat
 
 func (esstag *EssTagResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "`serviceaccount data source`",
+		MarkdownDescription: "`ess tag resource`",
 		Attributes: map[string]schema.Attribute{
 			"ess_id": schema.StringAttribute{
-				Required: true,
+				Description: "the ess group id",
+				Required:    true,
 			},
 			"tags": schema.MapAttribute{
+				Description: "the ess tags map",
 				ElementType: types.StringType,
 				Required:    true,
 			},

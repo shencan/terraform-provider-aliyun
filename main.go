@@ -19,11 +19,11 @@ package main
 import (
 	"context"
 	"flag"
+	"github.com/shencan/terraform-provider-aliyun/internal/provider"
 	"log"
 
 	"github.com/go-logr/logr"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/shencan/terraform-provider-aliyun/pkg"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -40,7 +40,7 @@ func main() {
 		Address: "github.com/shencan/aliyun",
 		Debug:   *debugFlag,
 	}
-	err := providerserver.Serve(context.Background(), pkg.New(version), opts)
+	err := providerserver.Serve(context.Background(), provider.New(version), opts)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

@@ -1,12 +1,11 @@
-package pkg
+package provider
 
 import (
 	"context"
-
-	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/shencan/terraform-provider-aliyun/pkg/models"
+	"github.com/shencan/terraform-provider-aliyun/internal/provider/models"
 
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
