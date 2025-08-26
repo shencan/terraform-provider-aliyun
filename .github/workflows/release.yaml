@@ -1,4 +1,4 @@
-version: 2
+
 # Terraform Provider release workflow.
 name: Release
 
