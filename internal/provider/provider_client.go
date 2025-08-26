@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
 	ess20220222 "github.com/alibabacloud-go/ess-20220222/v2/client"
 	"github.com/alibabacloud-go/tea/tea"
@@ -27,7 +28,8 @@ func (c *ProviderClient) NewEssClient() (*ess20220222.Client, error) {
 		AccessKeyId:     tea.String(c.Ak),
 		AccessKeySecret: tea.String(c.Sk),
 	}
-	config.Endpoint = tea.String("ess.aliyuncs.com")
+	//config.Endpoint = tea.String("ess.aliyuncs.com")
+	config.Endpoint = tea.String(fmt.Sprintf("ess.%s.aliyuncs.com", c.Region))
 	return ess20220222.NewClient(config)
 }
 
